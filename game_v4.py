@@ -53,14 +53,14 @@ if CONDITION != 1 and CONDITION != 2:
  
 class Enemy(pygame.sprite.Sprite):
     """ This class represents the enemies """
-    f_notes = listdir("Notes/F#")
-    f_notes = ["Notes/F#/{0}".format(i) for i in f_notes if not i.startswith('.')]#format so they can be read in to pyo sound tables, don't read hidden proprietary files
-    a_notes = listdir("Notes/A")
-    a_notes = ["Notes/A/{0}".format(i) for i in a_notes if not i.startswith('.')]
-    c_notes = listdir("Notes/C")
-    c_notes = ["Notes/C/{0}".format(i) for i in c_notes if not i.startswith('.')]
-    d_notes = listdir("Notes/D#")
-    d_notes = ["Notes/D#/{0}".format(i) for i in d_notes if not i.startswith('.')]
+    cSharp_notes = listdir("Notes/C#")
+    cSharp_notes = ["Notes/C#/{0}".format(i) for i in cSharp_notes if not i.startswith('.')]#format so they can be read in to pyo sound tables, don't read hidden proprietary files
+    d_notes = listdir("Notes/D")
+    d_notes = ["Notes/D/{0}".format(i) for i in d_notes if not i.startswith('.')]
+    dSharp_notes = listdir("Notes/D#")
+    dSharp_notes = ["Notes/D#/{0}".format(i) for i in dSharp_notes if not i.startswith('.')]
+    e_notes = listdir("Notes/E")
+    e_notes = ["Notes/E/{0}".format(i) for i in e_notes if not i.startswith('.')]
     enemies = listdir("Images/Enemies")
     enemies = ["Images/Enemies/{0}".format(i) for i in enemies if not i.startswith('.')]
     x_speed = 1
@@ -87,117 +87,82 @@ class Enemy(pygame.sprite.Sprite):
     c_range = get_range(c_pos)
     d_pos = SCREEN_WIDTH - 42
     d_range = get_range(d_pos)
-    #sound = pygame.mixer.Sound("Users/joshuaoberman/documents/speaker.wav")
+    #this is like random.choice but weighted
+    def weighted_choice(choices):
+        total = sum(w for c, w in choices)
+        r = random.uniform(0, total)
+        upto = 0
+        for c, w in choices:
+            if upto + w > r:
+                return c
+            upto += w
+        assert False, "Shouldn't get here"
+    """probability weights, these are based on how listdir() will naturally order the  files. Verify that they are indeed being read in in this order
+    on whatever machine you're using before you run this game: [+10, +15, +20, +25, +5, -10, -15, -20, -25, -5, 0] """
+    probs = [7, 5, 2, 1, 15, 7, 5, 2, 1, 15, 40]
     def __init__(self, enemy_type):
         """ Constructor, create the image of the enemy/sound for enemy. Selected from three enemy types """
         pygame.sprite.Sprite.__init__(self)
         self.enemy_type = enemy_type
         #self.env = pyo.Fader(fadein=.01,fadeout=.2, dur=0) #amplitude envelope to get rid of pops
         self.pop = pyo.SfPlayer("Sounds/kill.wav")#for when enemy dies
+        #This is experimental condition
         if CONDITION == 1:
             if self.enemy_type == 'A':
-                self.c_notes = [pyo.SndTable(c) for c in self.c_notes]
-                snd = random.choice(self.c_notes)
-                freq = snd.getRate()
-                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
-                #the following function lets us switch between .wav files each time through the loop
-                def switch():
-                    snd = random.choice(self.c_notes)
-                    freq = snd.getRate()
-                    self.sound.setTable(snd)
-                    self.sound.setFreq(freq)
-                self.trig = pyo.TrigFunc(self.sound['trig'],switch)
+                snd = self.weighted_choice(self.e_notes)
+                snd = pyo.SndTable(snd)
+                snddur = snd.getDur()
+                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[0])
             elif self.enemy_type == 'B':
-                self.f_notes = [pyo.SndTable(f) for f in self.f_notes]
-                snd = random.choice(self.f_notes)
-                freq = snd.getRate()
-                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
-                def switch():
-                    snd = random.choice(self.f_notes)
-                    freq = snd.getRate()
-                    self.sound.setTable(snd)
-                    self.sound.setFreq(freq)
-                self.trig = pyo.TrigFunc(self.sound['trig'],switch)     
+                snd = self.weighted_choice(self.cSharp_notes)
+                snd = pyo.SndTable(snd)
+                snddur = snd.getDur()
+                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)    
                 self.image = pygame.image.load(self.enemies[1])
             elif self.enemy_type == 'C':
-                self.a_notes = [pyo.SndTable(a) for a in self.a_notes]
-                snd = random.choice(self.a_notes)
-                freq = snd.getRate()
-                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
-                def switch():
-                    snd = random.choice(self.a_notes)
-                    freq = snd.getRate()
-                    self.sound.setTable(snd)
-                    self.sound.setFreq(freq)
-                self.trig = pyo.TrigFunc(self.sound['trig'],switch)
+                snd = self.weighted_choice(self.dSharp_notes)
+                snd = pyo.SndTable(snd)
+                snddur = snd.getDur()
+                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[2])
             elif self.enemy_type == 'D':
-                self.d_notes = [pyo.SndTable(d) for d in self.d_notes]
-                snd = random.choice(self.d_notes)
-                freq = snd.getRate()
-                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
-                def switch():
-                    snd = random.choice(self.d_notes)
-                    freq = snd.getRate()
-                    self.sound.setTable(snd)
-                    self.sound.setFreq(freq)
-                self.trig = pyo.TrigFunc(self.sound['trig'],switch)
+                snd = self.weighted_choice(self.d_notes)
+                snd = pyo.SndTable(snd)
+                snddur = snd.getDur()
+                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[3])
 
+        #control condition
         elif CONDITION==2:
-            self.notes = [self.c_notes, self.f_notes, self.a_notes, self.d_notes]
+            self.notes = [self.cSharp_notes, self.d_notes, self.dSharp_notes, self.e_notes]
             if self.enemy_type=='A':
                 notes = random.choice(self.notes)
                 notes = [pyo.SndTable(note) for note in notes]
-                snd = random.choice(notes)
-                freq = snd.getRate()
-                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
-                def switch():
-                    snd = random.choice(notes)
-                    freq = snd.getRate()
-                    self.sound.setTable(snd)
-                    self.sound.setFreq(freq)
-                self.trig = pyo.TrigFunc(self.sound['trig'],switch)
+                snd = self.weighted_choice(notes)
+                snddur = snd.getDur()
+                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[0])
             elif self.enemy_type=='B':
                 notes = random.choice(self.notes)
                 notes = [pyo.SndTable(note) for note in notes]
-                snd = random.choice(notes)
-                freq = snd.getRate()
-                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
-                def switch():
-                    snd = random.choice(notes)
-                    freq = snd.getRate()
-                    self.sound.setTable(snd)
-                    self.sound.setFreq(freq)
-                self.trig = pyo.TrigFunc(self.sound['trig'],switch)
+                snd = self.weighted_choice(notes)
+                snddur = snd.getDur()
+                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[1])
             elif self.enemy_type=='C':
                 notes = random.choice(self.notes)
                 notes = [pyo.SndTable(note) for note in notes]
-                snd = random.choice(notes)
-                freq = snd.getRate()
-                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
-                def switch():
-                    snd = random.choice(notes)
-                    freq = snd.getRate()
-                    self.sound.setTable(snd)
-                    self.sound.setFreq(freq)
-                self.trig = pyo.TrigFunc(self.sound['trig'],switch)
+                snd = self.weighted_choice(notes)
+                snddur = snd.getDur()
+                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[2])
             elif self.enemy_type=='D':
                 notes = random.choice(self.notes)
                 notes = [pyo.SndTable(note) for note in notes]
-                snd = random.choice(notes)
-                freq = snd.getRate()
-                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
-                def switch():
-                    snd = random.choice(notes)
-                    freq = snd.getRate()
-                    self.sound.setTable(snd)
-                    self.sound.setFreq(freq)
-                self.trig = pyo.TrigFunc(self.sound['trig'],switch)
+                snd = self.weighted_choice(notes)
+                snddur = snd.getDur()
+                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[3])                
             
         self.image = pygame.transform.scale(self.image, (32,32))
@@ -300,6 +265,7 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.y -= self.bullet_speed
 
 class Level(object):
+    #this is used to define levels and the ammo and speed attributes as they increase
     currentLevel = 1
     level_success = None
     ammo = None
@@ -368,6 +334,11 @@ class Game(object):
     enemyB_kill_time = []
     enemyC_kill_time = []
     enemyD_kill_time = []
+    enemyA_hitBase_time = []
+    enemyB_hitBase_time = []
+    enemyC_hitBase_time = []
+    enemyD_hitBase_time = []
+
     # Other data
     levels = []
     score = 0
@@ -382,6 +353,8 @@ class Game(object):
     #bools for adding/removing target
     is_b_target = False
     is_c_target = False
+    #for the noise mask
+    playNoise = False
      
     # --- Class methods
     # Set up the game
@@ -454,6 +427,7 @@ class Game(object):
                 self.Dshot_time.append(shot)
                 self.D_bullet_list.add(self.bullet)
          
+        #event handling from joystick controller
         for event in pygame.event.get():
             if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
                 return True
@@ -532,9 +506,14 @@ class Game(object):
             del self.trajectory[:]
             trajectories.close()
 
+        self.n = pyo.Noise(mul=0.05).mix(2)
+
         if not self.level_over and not self.game_start and not self.game_over:
-        # Create the enemy sprites
+            if not self.enemy_live and 30.0<self.elapsedTime<self.enemySpawnTime-20.0:
+                #time to play masking noise
+                self.n.out()
             if not self.enemy_live and self.elapsedTime==self.enemySpawnTime:
+                # spawn enemy
                 self.enemy_type = self.level.enemies_list.pop()
                 self.enemy = Enemy(self.enemy_type)
                 self.enemy.generate()
@@ -557,22 +536,30 @@ class Game(object):
                     self.score -= 1/float(60) # decrease score by 1 for every second that enemy is alive
                 #kill enemy if it goes off screen
                 if self.enemy.rect.y > SCREEN_HEIGHT + self.enemy.rect.height:
+                    #remove enemy, lose 20 points if it reaches a base
+                    time = core.getTime()
                     self.enemy.sound.stop()
                     self.all_sprites_list.remove(self.enemy)
                     if self.enemy.enemy_type == 'A':
+                        self.enemyA_hitBase_time.append(time)
                         self.enemyA_list.remove(self.enemy)
                     if self.enemy.enemy_type == 'B':
+                        self.enemyB_hitBase_time.append(time)
                         self.enemyB_list.remove(self.enemy)
                     if self.enemy.enemy_type == 'C':
+                        self.enemyC_hitBase_time.append(time)
                         self.enemyC_list.remove(self.enemy)
                     if self.enemy.enemy_type == 'D':
+                        self.enemyD_hitBase_time.append(time)
                         self.enemyD_list.remove(self.enemy)
                     self.dead_enemies.add(self.enemy)
                     self.level.live_list.append(self.enemy.enemy_type)
                     self.elapsedTime = 0
                     self.score -= 20
+                    write_trajectory(self.trial, self.level.currentLevel)
                     self.enemy_live = False
             def kill_enemy(bullet_color, enemy_type):
+                # do all the stuff
                 time = core.getTime()
                 if enemy_type=='A':
                     self.enemyA_kill_time.extend((self.level.currentLevel,time))
@@ -601,8 +588,8 @@ class Game(object):
                     self.D_bullet_list.remove(bullet)
             
             self.player.rect.x += self.x_speed #update speed based on joystick 
-            #keep player in boundaries
-                
+            
+            #keep player in boundaries    
             if self.player.rect.x <= 0:
                 self.x_speed = 0
                 self.player.rect.x = 0
@@ -775,7 +762,7 @@ def main():
     pygame.init()
     #start pyo sound, use lowest latency output
     s = pyo.Server(duplex=0)
-    s.setOutputDevice(14)
+    #s.setOutputDevice(14)
     s.boot()
     s.start()
     
