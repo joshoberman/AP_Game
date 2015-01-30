@@ -43,11 +43,16 @@ def checkData(SUBJECT):
             return checkData(SUBJECT)
 checkData(SUBJECT)
 
-CONDITION = raw_input("Condition 1 (structured) or 2 (randomized)? ")
-CONDITION = int(CONDITION)
-if CONDITION != 1 and CONDITION != 2:
-    CONDITION = raw_input("Not a valid entry. Condition 1 (structured) or 2 (randomized)? ")
+CONDITION = raw_input("Condition 1 (variable) or 2 (static)? ")
+def checkCond(CONDITION):
     CONDITION = int(CONDITION)
+    if CONDITION != 1 and CONDITION != 2:
+        CONDITION = raw_input("Not a valid entry. Condition 1 (variable) or 2 (static)? ")
+        return checkCond(CONDITION)
+    return CONDITION
+
+CONDITION = checkCond(CONDITION)
+print CONDITION
 
 # --- Classes ---
  
@@ -87,16 +92,6 @@ class Enemy(pygame.sprite.Sprite):
     c_range = get_range(c_pos)
     d_pos = SCREEN_WIDTH - 42
     d_range = get_range(d_pos)
-    #this is like random.choice but weighted
-    def weighted_choice(choices):
-        total = sum(w for c, w in choices)
-        r = random.uniform(0, total)
-        upto = 0
-        for c, w in choices:
-            if upto + w > r:
-                return c
-            upto += w
-        assert False, "Shouldn't get here"
     """probability weights, these are based on how listdir() will naturally order the  files. Verify that they are indeed being read in in this order
     on whatever machine you're using before you run this game: [+10, +15, +20, +25, +5, -10, -15, -20, -25, -5, 0] """
     probs = [7, 5, 2, 1, 15, 7, 5, 2, 1, 15, 40]
@@ -105,29 +100,46 @@ class Enemy(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.enemy_type = enemy_type
         #self.env = pyo.Fader(fadein=.01,fadeout=.2, dur=0) #amplitude envelope to get rid of pops
-        self.pop = pyo.SfPlayer("Sounds/kill.wav")#for when enemy dies
+        self.pop = pyo.SfPlayer("Sounds/kill.wav", mul=0.2)#for when enemy dies
+        
+        #this is like random.choice but weighted
+        def weighted_choice(items, probs=self.probs):
+            choices = [tuple(x) for x in zip(items,probs)]
+            total = sum(w for c, w in choices)
+            r = random.uniform(0, total)
+            upto = 0
+            for c, w in choices:
+                if upto + w > r:
+                    return c
+                upto += w
+            assert False, "Shouldn't get here"
+        
         #This is experimental condition
         if CONDITION == 1:
             if self.enemy_type == 'A':
-                snd = self.weighted_choice(self.e_notes)
+                snd = weighted_choice(self.e_notes, self.probs)
+                print snd
                 snd = pyo.SndTable(snd)
                 snddur = snd.getDur()
                 self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[0])
             elif self.enemy_type == 'B':
-                snd = self.weighted_choice(self.cSharp_notes)
+                snd = weighted_choice(self.cSharp_notes, self.probs)
+                print snd
                 snd = pyo.SndTable(snd)
                 snddur = snd.getDur()
                 self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)    
                 self.image = pygame.image.load(self.enemies[1])
             elif self.enemy_type == 'C':
-                snd = self.weighted_choice(self.dSharp_notes)
+                snd = weighted_choice(self.d_notes, self.probs)
+                print snd
                 snd = pyo.SndTable(snd)
                 snddur = snd.getDur()
                 self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[2])
             elif self.enemy_type == 'D':
-                snd = self.weighted_choice(self.d_notes)
+                snd = weighted_choice(self.dSharp_notes, self.probs)
+                print snd
                 snd = pyo.SndTable(snd)
                 snddur = snd.getDur()
                 self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
@@ -135,34 +147,25 @@ class Enemy(pygame.sprite.Sprite):
 
         #control condition
         elif CONDITION==2:
-            self.notes = [self.cSharp_notes, self.d_notes, self.dSharp_notes, self.e_notes]
             if self.enemy_type=='A':
-                notes = random.choice(self.notes)
-                notes = [pyo.SndTable(note) for note in notes]
-                snd = self.weighted_choice(notes)
-                snddur = snd.getDur()
-                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
+                note = pyo.SndTable(self.e_notes[-1])
+                snddur = note.getDur()
+                self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[0])
             elif self.enemy_type=='B':
-                notes = random.choice(self.notes)
-                notes = [pyo.SndTable(note) for note in notes]
-                snd = self.weighted_choice(notes)
-                snddur = snd.getDur()
-                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
+                note = pyo.SndTable(self.cSharp_notes[-1])
+                snddur = note.getDur()
+                self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[1])
             elif self.enemy_type=='C':
-                notes = random.choice(self.notes)
-                notes = [pyo.SndTable(note) for note in notes]
-                snd = self.weighted_choice(notes)
-                snddur = snd.getDur()
-                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
+                note = pyo.SndTable(self.d_notes[-1])
+                snddur = note.getDur()
+                self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[2])
             elif self.enemy_type=='D':
-                notes = random.choice(self.notes)
-                notes = [pyo.SndTable(note) for note in notes]
-                snd = self.weighted_choice(notes)
-                snddur = snd.getDur()
-                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
+                note = pyo.SndTable(self.dSharp_notes[-1])
+                snddur = note.getDur()
+                self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[3])                
             
         self.image = pygame.transform.scale(self.image, (32,32))
@@ -383,15 +386,22 @@ class Game(object):
         self.x_speed = 0
         self.level = Level()
         #shot sound
-        self.shot_sound = pyo.SfPlayer("Sounds/laser_shot.aif", mul=0.4)
+        self.shot_sound = pyo.SfPlayer("Sounds/laser_shot.aif", mul=0.1)
         #wrong button sound
-        self.wrong_button = pyo.SfPlayer("Sounds/wrong_hit.wav")
+        self.wrong_button = pyo.SfPlayer("Sounds/wrong_hit.wav", mul=0.2)
         self.controller = True #Is controller plugged in-->defaults to yes
         try:
             pygame.joystick.Joystick(0)
         except:
             print "NO CONTROLLER PLUGGED IN"
             self.controller = False
+
+        t = pyo.CosTable([(0,0),(50,1), (500,0.3), (8191,0)])
+        met = pyo.Metro(time=.2).play()
+        amp = pyo.TrigEnv(met, table=t, dur=0.18, mul=.3)
+        freq = pyo.TrigRand(met, min=400.0, max=1000.0)
+        self.a = pyo.Sine(freq=[freq,freq], mul=amp)
+        self.n = pyo.Noise(mul=.04).mix(2)
  
     def process_events(self):
         """ Process all of the events. Return a "True" if we need
@@ -440,37 +450,17 @@ class Game(object):
                 self.x_speed = horiz_pos * self.stick_sensitivity
                 if event.type == pygame.JOYBUTTONDOWN:
                     if self.level.ammo>0:
-                        if (5>=self.level.currentLevel>=1):
-                            if event.button==0:
-                                shoot('A', GREEN)
-                            elif event.button == 1:
-                                shoot('B', RED)
-                            elif event.button == 2:
-                                shoot('C', YELLOW)
-                            elif event.button == 3:
-                                shoot('D', BROWN)
-                        elif (self.level.currentLevel>=6):
-                            if event.button == 0:
-                                if joystick.get_button(4)==1 and joystick.get_button(5) == 0 and joystick.get_button(6)==0: #set up mod and exclude others to prevent cheating
-                                    shoot('A', GREEN)
-                                else:
-                                    #play wrong button sound
-                                    self.wrong_button.out()
-                            elif event.button == 1:
-                                if joystick.get_button(5)==0 and joystick.get_button(4) == 0 and joystick.get_button(6)==1 and joystick.get_button(7)==0:
-                                    shoot('B',RED)
-                                else:
-                                    self.wrong_button.out()
-                            elif event.button == 2:
-                                if joystick.get_button(6)==0 and joystick.get_button(5) == 1 and joystick.get_button(7)==0 and joystick.get_button(4)==0:
-                                    shoot('C', YELLOW)
-                                else:
-                                    self.wrong_button.out()
-                            elif event.button == 3:
-                                if joystick.get_button(7) ==1 and joystick.get_button(5) ==0 and joystick.get_button(4) == 0 and joystick.get_button(6)==0:
-                                    shoot('D', BROWN)
-                                else:
-                                    self.wrong_button.out()
+                        if event.button==0:
+                            shoot('A', GREEN)
+                        elif event.button == 1:
+                            shoot('B', RED)
+                        elif event.button == 2:
+                            shoot('C', YELLOW)
+                        elif event.button == 3:
+                            shoot('D', BROWN)
+                    else:
+                        self.wrong_button.out()
+
                     if event.button == 8 or event.button == 9:
                         if self.game_start:
                             self.game_start = False
@@ -506,13 +496,14 @@ class Game(object):
             del self.trajectory[:]
             trajectories.close()
 
-        self.n = pyo.Noise(mul=0.05).mix(2)
-
         if not self.level_over and not self.game_start and not self.game_over:
-            if not self.enemy_live and 30.0<self.elapsedTime<self.enemySpawnTime-20.0:
+            if not self.enemy_live and 20.0<self.elapsedTime<self.enemySpawnTime:
                 #time to play masking noise
                 self.n.out()
+                self.a.out()
             if not self.enemy_live and self.elapsedTime==self.enemySpawnTime:
+                self.a.stop()
+                self.n.stop()
                 # spawn enemy
                 self.enemy_type = self.level.enemies_list.pop()
                 self.enemy = Enemy(self.enemy_type)
@@ -705,7 +696,7 @@ class Game(object):
             
         if self.game_start:
             font = pygame.font.Font(None, 25)
-            text = font.render("Hello, thank you for participating in this experiment! You will be using the following buttons for the first level:",
+            text = font.render("Hello, thank you for participating in this experiment! You will be using the following buttons for this game:",
                                True, WHITE)
             text2 = font.render("Button 1:            Button 2:            Button 3:            Button 4:", True, WHITE)
             center_text(text)
@@ -725,15 +716,6 @@ class Game(object):
                                    " out of 16 enemies, you will move on to the next level."
                                    , True, GREEN)
                 center_text(text)
-            if self.level.currentLevel == 6:
-                font = pygame.font.Font(None, 25)
-                text = font.render("For the next two levels, you must use the following keys for each enemy:", True, GREEN)
-                center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
-                center_y = (SCREEN_HEIGHT // 2) + (text.get_height() // 2) + 5
-                screen.blit(text, [center_x, center_y])
-                text2 = font.render("L1 + 1 for:             L2 + 2 for:            R1 + 3 for:         R2 + 4 for:", True, GREEN)
-                next_line(text2,40)
-                display_enemies()
          
         if not self.game_over:
             """draw sprites, print score"""
