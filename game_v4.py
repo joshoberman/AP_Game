@@ -78,8 +78,8 @@ class Enemy(pygame.sprite.Sprite):
     e_10cents = ["Notes/E-10cent/{0}".format(i) for i in e_10cents if not i.startswith('.')]"""
     enemies = listdir("Images/Enemies")
     enemies = ["Images/Enemies/{0}".format(i) for i in enemies if not i.startswith('.')]
-    x_speed = 5
-    y_speed = 5
+    x_speed = 1
+    y_speed = 1
     #prob = 0.6
     offscreen_min = 6 #min of generation of enemy/sound stimulus onset offscreen in seconds
     offscreen_max = 6 #max of generation of enemy/sound stimulus onset offscreen in seconds
@@ -335,7 +335,7 @@ class Level(object):
     def __init__(self):
         self.live_list = []
         self.kill_list = []
-        self.enemies_list = ['A','A','A','A']#'B','B','B','B','C','C','C','C','D','D','D','D']
+        self.enemies_list = ['A','A','A','A','B','B','B','B','C','C','C','C','D','D','D','D']
         random.shuffle(self.enemies_list)
         if self.currentLevel==1 or self.currentLevel==2:
             self.ammo = 60
@@ -808,7 +808,7 @@ def main():
     pygame.init()
     #start pyo sound, use lowest latency output
     s = pyo.Server(duplex=0)
-    #s.setOutputDevice(14)
+    s.setOutputDevice(14)
     s.boot()
     s.start()
     
