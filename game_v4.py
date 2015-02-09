@@ -126,7 +126,7 @@ class Enemy(pygame.sprite.Sprite):
 
         #this function will return an index 
         def random_walk(currInd):
-            coinFlip = random.randrange(2)
+            coinFlip = random.randrange(3) #three outcome 'coin flip' to determine whether to move up, down, or stay the same
             if coinFlip == 0:
                 if currInd != 0 and currInd != 10:
                     currInd -= 1
@@ -141,6 +141,8 @@ class Enemy(pygame.sprite.Sprite):
                     currInd += 1
                 elif currInd == 10:
                     currInd -= 1
+            elif coinFlip == 2:
+                pass
             return currInd
 
         self.cSharp_notes = [pyo.SndTable(note) for note in self.cSharp_notes]
@@ -206,22 +208,22 @@ class Enemy(pygame.sprite.Sprite):
         #control condition
         elif CONDITION==2:
             if self.enemy_type == 'A':
-                note = pyo.SndTable(self.e_10cents[-1])
+                note = self.e_notes[5]
                 snddur = note.getDur()
                 self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[0])   
             elif self.enemy_type == 'B':
-                note = pyo.SndTable(self.cSharp_10cents[-1])
+                note = self.cSharp_notes[5]
                 snddur = note.getDur()
                 self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[1])   
             elif self.enemy_type == 'C':
-                note = pyo.SndTable(self.d_10cents[-1])
+                note = self.d_notes[5]
                 snddur = note.getDur()
                 self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[2])   
             elif self.enemy_type == 'D':
-                note = pyo.SndTable(self.dSharp_10cents[-1])
+                note = self.dSharp_notes[5]
                 snddur = note.getDur()
                 self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[3])                
