@@ -409,7 +409,7 @@ class Game(object):
     enemy_live = False #bool to tell us if there is a live enemy
     elapsedTime = 0.0 #keep track of elapsed time via frame rate changes
     enemySpawnTime= 120.0 # of frames between enemy death and next enemy spawn
-    stick_sensitivity = 5 #sensitivity of joystick for player motion, represents max number of
+    stick_sensitivity = 2 #sensitivity of joystick for player motion, represents max number of
     #pixels per frame the player moves when stick is moved all the way to left or right
     trajectory = []
     trial = 0
