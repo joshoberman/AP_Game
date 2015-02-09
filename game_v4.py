@@ -58,18 +58,28 @@ print CONDITION
  
 class Enemy(pygame.sprite.Sprite):
     """ This class represents the enemies """
-    cSharp_notes = listdir("Notes/C#")
+    centsRangeDesc = range(25,0,-5) #for pos values
+    centsRangeAsc = range(5,30,5) #for neg values
+    cSharp_notes = ["C#+%d.wav"%num for num in centsRangeDesc] + ["C#.wav"] + ["C#-%d.wav"%num for num in centsRangeAsc]
     cSharp_notes = ["Notes/C#/{0}".format(i) for i in cSharp_notes if not i.startswith('.')]#format so they can be read in to pyo sound tables, don't read hidden proprietary files
-    d_notes = listdir("Notes/D")
+    d_notes = ["D+%d.wav"%num for num in centsRangeDesc] + ["D.wav"] + ["D-%d.wav"%num for num in centsRangeAsc]
     d_notes = ["Notes/D/{0}".format(i) for i in d_notes if not i.startswith('.')]
-    dSharp_notes = listdir("Notes/D#")
+    dSharp_notes = ["D#+%d.wav"%num for num in centsRangeDesc] + ["D#.wav"] + ["D#-%d.wav"%num for num in centsRangeAsc]
     dSharp_notes = ["Notes/D#/{0}".format(i) for i in dSharp_notes if not i.startswith('.')]
-    e_notes = listdir("Notes/E")
+    e_notes = ["E+%d.wav"%num for num in centsRangeDesc] + ["E.wav"] + ["E-%d.wav"%num for num in centsRangeAsc]
     e_notes = ["Notes/E/{0}".format(i) for i in e_notes if not i.startswith('.')]
+    """cSharp_10cents = listdir("Notes/C#-10cent")
+    cSharp_10cents = ["Notes/C#-10cent/{0}".format(i) for i in cSharp_10cents if not i.startswith('.')]#format so they can be read in to pyo sound tables, don't read hidden proprietary files
+    d_10cents = listdir("Notes/D-10cent")
+    d_10cents = ["Notes/D-10cent/{0}".format(i) for i in d_10cents if not i.startswith('.')]
+    dSharp_10cents = listdir("Notes/D#-10cent")
+    dSharp_10cents = ["Notes/D#-10cent/{0}".format(i) for i in dSharp_10cents if not i.startswith('.')]
+    e_10cents = listdir("Notes/E-10cent")
+    e_10cents = ["Notes/E-10cent/{0}".format(i) for i in e_10cents if not i.startswith('.')]"""
     enemies = listdir("Images/Enemies")
     enemies = ["Images/Enemies/{0}".format(i) for i in enemies if not i.startswith('.')]
-    x_speed = 1
-    y_speed = 1
+    x_speed = 5
+    y_speed = 5
     #prob = 0.6
     offscreen_min = 6 #min of generation of enemy/sound stimulus onset offscreen in seconds
     offscreen_max = 6 #max of generation of enemy/sound stimulus onset offscreen in seconds
@@ -94,7 +104,7 @@ class Enemy(pygame.sprite.Sprite):
     d_range = get_range(d_pos)
     """probability weights, these are based on how listdir() will naturally order the  files. Verify that they are indeed being read in in this order
     on whatever machine you're using before you run this game: [+10, +15, +20, +25, +5, -10, -15, -20, -25, -5, 0] """
-    probs = [7, 5, 2, 1, 15, 7, 5, 2, 1, 15, 40]
+    probs = [6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 6.25, 50]
     def __init__(self, enemy_type):
         """ Constructor, create the image of the enemy/sound for enemy. Selected from three enemy types """
         pygame.sprite.Sprite.__init__(self)
@@ -113,57 +123,105 @@ class Enemy(pygame.sprite.Sprite):
                     return c
                 upto += w
             assert False, "Shouldn't get here"
+
+        #this function will return an index 
+        def random_walk(currInd):
+            coinFlip = random.randrange(2)
+            if coinFlip == 0:
+                if currInd != 0 and currInd != 10:
+                    currInd -= 1
+                elif currInd == 0:
+                    currInd += 1
+                elif currInd == 10:
+                    currInd -= 1
+            elif coinFlip == 1:
+                if currInd != 0 and currInd != 10:
+                    currInd += 1
+                elif currInd == 0:
+                    currInd += 1
+                elif currInd == 10:
+                    currInd -= 1
+            return currInd
+
+        self.cSharp_notes = [pyo.SndTable(note) for note in self.cSharp_notes]
+        self.d_notes = [pyo.SndTable(note) for note in self.d_notes]
+        self.dSharp_notes = [pyo.SndTable(note) for note in self.dSharp_notes]
+        self.e_notes = [pyo.SndTable(note) for note in self.e_notes]
         
         #This is experimental condition
         if CONDITION == 1:
             if self.enemy_type == 'A':
-                snd = weighted_choice(self.e_notes, self.probs)
-                print snd
-                snd = pyo.SndTable(snd)
-                snddur = snd.getDur()
-                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
+                self.ind = random.randrange(0,11,1)
+                snd = self.e_notes[self.ind]
+                freq = snd.getRate()
+                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
+                def switch():
+                    self.ind = random_walk(self.ind)
+                    snd = self.e_notes[self.ind]
+                    freq = snd.getRate()
+                    self.sound.setTable(snd)
+                    self.sound.setFreq(freq)
+                self.trig = pyo.TrigFunc(self.sound['trig'],switch)
                 self.image = pygame.image.load(self.enemies[0])
             elif self.enemy_type == 'B':
-                snd = weighted_choice(self.cSharp_notes, self.probs)
-                print snd
-                snd = pyo.SndTable(snd)
-                snddur = snd.getDur()
-                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)    
+                self.ind = random.randrange(0,11,1)
+                snd = self.cSharp_notes[self.ind]
+                freq = snd.getRate()
+                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
+                def switch():
+                    self.ind = random_walk(self.ind)
+                    snd = self.cSharp_notes[self.ind]
+                    freq = snd.getRate()
+                    self.sound.setTable(snd)
+                    self.sound.setFreq(freq)
+                self.trig = pyo.TrigFunc(self.sound['trig'],switch) 
                 self.image = pygame.image.load(self.enemies[1])
             elif self.enemy_type == 'C':
-                snd = weighted_choice(self.d_notes, self.probs)
-                print snd
-                snd = pyo.SndTable(snd)
-                snddur = snd.getDur()
-                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
+                self.ind = random.randrange(0,11,1)
+                snd = self.d_notes[self.ind]
+                freq = snd.getRate()
+                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
+                def switch():
+                    self.ind = random_walk(self.ind)
+                    snd = self.d_notes[self.ind]
+                    freq = snd.getRate()
+                    self.sound.setTable(snd)
+                    self.sound.setFreq(freq)
+                self.trig = pyo.TrigFunc(self.sound['trig'],switch)
                 self.image = pygame.image.load(self.enemies[2])
             elif self.enemy_type == 'D':
-                snd = weighted_choice(self.dSharp_notes, self.probs)
-                print snd
-                snd = pyo.SndTable(snd)
-                snddur = snd.getDur()
-                self.sound = pyo.Looper(snd, dur = snddur + self.lag, mul=1)
+                self.ind = random.randrange(0,11,1)
+                snd = self.dSharp_notes[self.ind]
+                freq = snd.getRate()
+                self.sound = pyo.TableRead(snd, freq=freq, loop=True, mul=1)
+                def switch():
+                    self.ind = random_walk(self.ind)
+                    snd = self.dSharp_notes[self.ind]
+                    freq = snd.getRate()
+                    self.sound.setTable(snd)
+                    self.sound.setFreq(freq)
+                self.trig = pyo.TrigFunc(self.sound['trig'],switch)
                 self.image = pygame.image.load(self.enemies[3])
 
         #control condition
         elif CONDITION==2:
-            if self.enemy_type=='A':
-                note = pyo.SndTable(self.e_notes[-1])
+            if self.enemy_type == 'A':
+                note = pyo.SndTable(self.e_10cents[-1])
                 snddur = note.getDur()
                 self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
-                self.image = pygame.image.load(self.enemies[0])
-            elif self.enemy_type=='B':
-                note = pyo.SndTable(self.cSharp_notes[-1])
+                self.image = pygame.image.load(self.enemies[0])   
+            elif self.enemy_type == 'B':
+                note = pyo.SndTable(self.cSharp_10cents[-1])
                 snddur = note.getDur()
                 self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
-                self.image = pygame.image.load(self.enemies[1])
-            elif self.enemy_type=='C':
-                note = pyo.SndTable(self.d_notes[-1])
+                self.image = pygame.image.load(self.enemies[1])   
+            elif self.enemy_type == 'C':
+                note = pyo.SndTable(self.d_10cents[-1])
                 snddur = note.getDur()
                 self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
-                self.image = pygame.image.load(self.enemies[2])
-            elif self.enemy_type=='D':
-                note = pyo.SndTable(self.dSharp_notes[-1])
+                self.image = pygame.image.load(self.enemies[2])   
+            elif self.enemy_type == 'D':
+                note = pyo.SndTable(self.dSharp_10cents[-1])
                 snddur = note.getDur()
                 self.sound = pyo.Looper(note, dur = snddur + self.lag, mul=1)
                 self.image = pygame.image.load(self.enemies[3])                
@@ -275,7 +333,7 @@ class Level(object):
     def __init__(self):
         self.live_list = []
         self.kill_list = []
-        self.enemies_list = ['A','A','A','A','B','B','B','B','C','C','C','C','D','D','D','D']
+        self.enemies_list = ['A','A','A','A']#'B','B','B','B','C','C','C','C','D','D','D','D']
         random.shuffle(self.enemies_list)
         if self.currentLevel==1 or self.currentLevel==2:
             self.ammo = 60
@@ -365,6 +423,7 @@ class Game(object):
         self.score = 0
         self.game_over = False
         self.game_start = True
+        self.first_trial = True
         self.level_over = False
          
         # Create sprite lists
@@ -466,6 +525,7 @@ class Game(object):
                             self.game_start = False
                         if self.level_over:
                             self.level.load_level()
+                            self.first_trial = True
                             self.level_over = False
         return False #for exiting game
  
@@ -497,13 +557,15 @@ class Game(object):
             trajectories.close()
 
         if not self.level_over and not self.game_start and not self.game_over:
-            if not self.enemy_live and 20.0<self.elapsedTime<self.enemySpawnTime:
+            if not self.enemy_live and 20.0<self.elapsedTime<self.enemySpawnTime and not self.first_trial:
                 #time to play masking noise
                 self.n.out()
                 self.a.out()
             if not self.enemy_live and self.elapsedTime==self.enemySpawnTime:
                 self.a.stop()
                 self.n.stop()
+                if self.first_trial:
+                    self.first_trial = False
                 # spawn enemy
                 self.enemy_type = self.level.enemies_list.pop()
                 self.enemy = Enemy(self.enemy_type)
