@@ -62,6 +62,8 @@ class Enemy(pygame.sprite.Sprite):
     centsRangeAsc = range(5,30,5) #for neg values
     cSharp_notes = ["C#+%d.wav"%num for num in centsRangeDesc] + ["C#.wav"] + ["C#-%d.wav"%num for num in centsRangeAsc]
     cSharp_notes = ["Notes/C#/{0}".format(i) for i in cSharp_notes if not i.startswith('.')]#format so they can be read in to pyo sound tables, don't read hidden proprietary files
+    del cSharp_notes[6]
+    print cSharp_notes
     d_notes = ["D+%d.wav"%num for num in centsRangeDesc] + ["D.wav"] + ["D-%d.wav"%num for num in centsRangeAsc]
     d_notes = ["Notes/D/{0}".format(i) for i in d_notes if not i.startswith('.')]
     dSharp_notes = ["D#+%d.wav"%num for num in centsRangeDesc] + ["D#.wav"] + ["D#-%d.wav"%num for num in centsRangeAsc]
@@ -110,7 +112,7 @@ class Enemy(pygame.sprite.Sprite):
         pygame.sprite.Sprite.__init__(self)
         self.enemy_type = enemy_type
         #self.env = pyo.Fader(fadein=.01,fadeout=.2, dur=0) #amplitude envelope to get rid of pops
-        self.pop = pyo.SfPlayer("Sounds/kill.wav", mul=0.2)#for when enemy dies
+        self.pop = pyo.SfPlayer("Sounds/kill.wav", mul=0.4)#for when enemy dies
         
         #this is like random.choice but weighted
         def weighted_choice(items, probs=self.probs):
@@ -408,8 +410,8 @@ class Game(object):
     maxTrials = 12 #maximum number of levels to play through
     enemy_live = False #bool to tell us if there is a live enemy
     elapsedTime = 0.0 #keep track of elapsed time via frame rate changes
-    enemySpawnTime= 120.0 # of frames between enemy death and next enemy spawn
-    stick_sensitivity = 2 #sensitivity of joystick for player motion, represents max number of
+    enemySpawnTime= 180.0 # of frames between enemy death and next enemy spawn
+    stick_sensitivity = 4 #sensitivity of joystick for player motion, represents max number of
     #pixels per frame the player moves when stick is moved all the way to left or right
     trajectory = []
     trial = 0
@@ -447,9 +449,9 @@ class Game(object):
         self.x_speed = 0
         self.level = Level()
         #shot sound
-        self.shot_sound = pyo.SfPlayer("Sounds/laser_shot.aif", mul=0.1)
+        self.shot_sound = pyo.SfPlayer("Sounds/laser_shot.aif", mul=0.2)
         #wrong button sound
-        self.wrong_button = pyo.SfPlayer("Sounds/wrong_hit.wav", mul=0.2)
+        self.wrong_button = pyo.SfPlayer("Sounds/wrong_hit.wav", mul=0.4)
         self.controller = True #Is controller plugged in-->defaults to yes
         try:
             pygame.joystick.Joystick(0)
@@ -459,10 +461,10 @@ class Game(object):
 
         t = pyo.CosTable([(0,0),(50,1), (500,0.3), (8191,0)])
         met = pyo.Metro(time=.2).play()
-        amp = pyo.TrigEnv(met, table=t, dur=0.18, mul=.3)
+        amp = pyo.TrigEnv(met, table=t, dur=0.18, mul=.35)
         freq = pyo.TrigRand(met, min=400.0, max=1000.0)
         self.a = pyo.Sine(freq=[freq,freq], mul=amp)
-        self.n = pyo.Noise(mul=.04).mix(2)
+        self.n = pyo.Noise(mul=.035).mix(2)
  
     def process_events(self):
         """ Process all of the events. Return a "True" if we need
@@ -832,7 +834,6 @@ def main():
     pygame.display.set_caption("AP Game")
     pygame.mouse.set_visible(False)
     elapsedTime = 0 #starts at 0, increases by one per frame change
-    timeBetweenSpawns = 500 #number of frames between spawns
      
     # Create our objects and set the data
     done = False
