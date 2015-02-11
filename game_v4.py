@@ -112,18 +112,6 @@ class Enemy(pygame.sprite.Sprite):
         self.enemy_type = enemy_type
         #self.env = pyo.Fader(fadein=.01,fadeout=.2, dur=0) #amplitude envelope to get rid of pops
         self.pop = pyo.SfPlayer("Sounds/kill.wav", mul=0.4)#for when enemy dies
-        
-        #this is like random.choice but weighted
-        def weighted_choice(items, probs=self.probs):
-            choices = [tuple(x) for x in zip(items,probs)]
-            total = sum(w for c, w in choices)
-            r = random.uniform(0, total)
-            upto = 0
-            for c, w in choices:
-                if upto + w > r:
-                    return c
-                upto += w
-            assert False, "Shouldn't get here"
 
         #this function will return an index 
         def random_walk(currInd):
@@ -272,14 +260,6 @@ class Enemy(pygame.sprite.Sprite):
     def update(self):
         """ Automatically called when we need to move the enemy. """
         self.rect.y += self.y_speed
-        #self.rect.x += self.x_speed
-        #bounce off edges
-        #if self.rect.x > SCREEN_WIDTH - self.rect.width or self.rect.x <= 0:
-        #    self.x_speed = -self.x_speed
-        #change x direction based on probability function
-        #self.random = random.random
-        #if self.random < self.prob:
-        #    self.x_speed = -self.x_speed
         """ Record time right when enemy fully enters screen """
         if -1<= self.rect.y <= 0:
             t_sight = core.getTime()
