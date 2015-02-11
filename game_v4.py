@@ -6,7 +6,6 @@ from os import listdir, mkdir, path
 import pygame
 import random
 from psychopy import core
-import xlsxwriter
 import pyo
 from itertools import izip_longest
 import egi.threaded as egi
@@ -809,8 +808,7 @@ def main():
     # Initialize Pygame and set up the window
     pygame.init()
     #start pyo sound, use lowest latency output
-    s = pyo.Server(duplex=0)
-    s.setOutputDevice(14)
+    s = pyo.Server(duplex=0, audio="jack")
     s.boot()
     s.start()
     
