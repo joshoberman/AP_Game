@@ -114,18 +114,6 @@ class Enemy(pygame.sprite.Sprite):
         self.enemy_type = enemy_type
         #self.env = pyo.Fader(fadein=.01,fadeout=.2, dur=0) #amplitude envelope to get rid of pops
         self.pop = pyo.SfPlayer("Sounds/kill.wav", mul=0.4)#for when enemy dies
-        
-        #this is like random.choice but weighted
-        def weighted_choice(items, probs=self.probs):
-            choices = [tuple(x) for x in zip(items,probs)]
-            total = sum(w for c, w in choices)
-            r = random.uniform(0, total)
-            upto = 0
-            for c, w in choices:
-                if upto + w > r:
-                    return c
-                upto += w
-            assert False, "Shouldn't get here"
 
         #this function will return an index 
         def random_walk(currInd):
@@ -805,8 +793,7 @@ def main():
     # Initialize Pygame and set up the window
     pygame.init()
     #start pyo sound, use lowest latency output
-    s = pyo.Server(duplex=0)
-    s.setOutputDevice(14)
+    s = pyo.Server(duplex=0, audio="jack")
     s.boot()
     s.start()
     
