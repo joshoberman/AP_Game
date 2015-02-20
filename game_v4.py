@@ -6,7 +6,6 @@ from os import listdir, mkdir, path
 import pygame
 import random
 from psychopy import core
-import xlsxwriter
 import pyo
 from itertools import izip_longest
 import egi.threaded as egi
@@ -43,7 +42,7 @@ def checkData(SUBJECT):
             return checkData(SUBJECT)
 checkData(SUBJECT)
 
-CONDITION = raw_input("Condition 1 (variable) or 2 (static)? ")
+"""CONDITION = raw_input("Condition 1 (variable) or 2 (static)? ")
 def checkCond(CONDITION):
     CONDITION = int(CONDITION)
     if CONDITION != 1 and CONDITION != 2:
@@ -52,6 +51,8 @@ def checkCond(CONDITION):
     return CONDITION
 
 CONDITION = checkCond(CONDITION)
+print CONDITION"""
+CONDITION = random.randrange(1,3)
 print CONDITION
 
 # --- Classes ---
@@ -62,7 +63,7 @@ class Enemy(pygame.sprite.Sprite):
     centsRangeAsc = range(5,30,5) #for neg values
     cSharp_notes = ["C#+%d.wav"%num for num in centsRangeDesc] + ["C#.wav"] + ["C#-%d.wav"%num for num in centsRangeAsc]
     cSharp_notes = ["Notes/C#/{0}".format(i) for i in cSharp_notes if not i.startswith('.')]#format so they can be read in to pyo sound tables, don't read hidden proprietary files
-    del cSharp_notes[6]
+    #del cSharp_notes[6]
     print cSharp_notes
     d_notes = ["D+%d.wav"%num for num in centsRangeDesc] + ["D.wav"] + ["D-%d.wav"%num for num in centsRangeAsc]
     d_notes = ["Notes/D/{0}".format(i) for i in d_notes if not i.startswith('.')]
@@ -93,7 +94,7 @@ class Enemy(pygame.sprite.Sprite):
     enemyB_generate_time = []
     enemyC_generate_time = []
     enemyD_generate_time = []
-    lag = 0.5
+    lag = 0.1
     def get_range(pos):
         return range(pos, pos+32, 1)
     a_pos = 10        
@@ -273,14 +274,6 @@ class Enemy(pygame.sprite.Sprite):
     def update(self):
         """ Automatically called when we need to move the enemy. """
         self.rect.y += self.y_speed
-        #self.rect.x += self.x_speed
-        #bounce off edges
-        #if self.rect.x > SCREEN_WIDTH - self.rect.width or self.rect.x <= 0:
-        #    self.x_speed = -self.x_speed
-        #change x direction based on probability function
-        #self.random = random.random
-        #if self.random < self.prob:
-        #    self.x_speed = -self.x_speed
         """ Record time right when enemy fully enters screen """
         if -1<= self.rect.y <= 0:
             t_sight = core.getTime()
@@ -347,8 +340,6 @@ class Level(object):
             self.ammo = 40
         elif self.currentLevel==6:
             self.ammo = 45
-            Enemy.y_speed = 1
-            Game.stick_sensitvity = 5
         elif self.currentLevel==7 or self.currentLevel==8 or self.currentLevel==9:
             self.ammo = 35
         elif self.currentLevel==9 or self.currentLevel==10 or self.currentLevel==11 or self.currentLevel==12:
@@ -363,9 +354,9 @@ class Level(object):
     
     def increase_level(self):
         self.currentLevel+=1
-        Enemy.y_speed += 1
-        Bullet.bullet_speed += 1
-        Game.stick_sensitivity += 0.1
+        Enemy.y_speed += 0.75
+        Bullet.bullet_speed += 0.5
+        Game.stick_sensitivity += 0.05
         
     
     def load_level(self):
@@ -406,6 +397,7 @@ class Game(object):
 
     # Other data
     levels = []
+    scores = []
     score = 0
     maxTrials = 12 #maximum number of levels to play through
     enemy_live = False #bool to tell us if there is a live enemy
@@ -418,8 +410,6 @@ class Game(object):
     #bools for adding/removing target
     is_b_target = False
     is_c_target = False
-    #for the noise mask
-    playNoise = False
      
     # --- Class methods
     # Set up the game
@@ -461,7 +451,7 @@ class Game(object):
 
         t = pyo.CosTable([(0,0),(50,1), (500,0.3), (8191,0)])
         met = pyo.Metro(time=.2).play()
-        amp = pyo.TrigEnv(met, table=t, dur=0.18, mul=.35)
+        amp = pyo.TrigEnv(met, table=t, dur=0.18, mul=.275)
         freq = pyo.TrigRand(met, min=400.0, max=1000.0)
         self.a = pyo.Sine(freq=[freq,freq], mul=amp)
         self.n = pyo.Noise(mul=.035).mix(2)
@@ -503,6 +493,10 @@ class Game(object):
         #event handling from joystick controller
         for event in pygame.event.get():
             if event.type == pygame.QUIT or event.type == pygame.KEYDOWN:
+                all_scores = open("Subject %s/scores.txt"%SUBJECT, "w")
+                for score in self.scores:
+                    all_scores.write(str(score)+'\n')
+                all_scores.close()
                 return True
             if self.controller:
                 joystick = pygame.joystick.Joystick(0)
@@ -709,12 +703,14 @@ class Game(object):
             """define end of level"""
             if len(self.level.enemies_list)==0 and not self.enemy_live:
                 self.levels.append(self.level.currentLevel)
-                scores = open("Subject %s/scores.txt"%SUBJECT, "w")
-                scores.write(str(self.score)+'\n')
-                scores.close()
+                self.scores.append(self.score)
                 #check to see if we've completed the max number of trials
                 if len(self.levels) == self.maxTrials:
                     self.game_over = True
+                    all_scores = open("Subject %s/scores.txt"%SUBJECT, "w")
+                    for score in self.scores:
+                        all_scores.write(str(score)+'\n')
+                    all_scores.close()
                 else:
                     self.level_over = True
                     self.level.check_success()
@@ -831,7 +827,6 @@ def main():
         pygame.draw.ellipse(screen, GREY, [xcoord, SCREEN_HEIGHT-26, 32, 26])
         #black dot in center for fun
         pygame.draw.ellipse(screen, BLACK, [xcoord+11, SCREEN_HEIGHT-18, 10, 10])
-    pygame.display.set_caption("AP Game")
     pygame.mouse.set_visible(False)
     elapsedTime = 0 #starts at 0, increases by one per frame change
      
