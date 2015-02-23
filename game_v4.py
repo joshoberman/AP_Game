@@ -793,7 +793,8 @@ def main():
     # Initialize Pygame and set up the window
     pygame.init()
     #start pyo sound, use lowest latency output
-    s = pyo.Server(duplex=0, audio="jack")
+    s = pyo.Server(duplex=0)
+    s.setOutputDevice(14)
     s.boot()
     s.start()
     
