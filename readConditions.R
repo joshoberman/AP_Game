@@ -19,7 +19,7 @@ readCondition<-function(subject){
     colnames(s)<-subject
     levels<-1:12
     for(i in levels){
-        levels[i] = str_join("Level",i)
+        levels[i] = str_join("ScoreLevel",i)
     }
     row.names(s)<-levels
     c<-read.table(str_join(subject,"/condition.txt"))
@@ -47,13 +47,17 @@ readAll<-function(numberSubjects){
         allData<-rbind(allData,readCondition(subjects[i]))
     }
     Subject<-row.names(allData)
+    for (i in 1:length(Subject)){
+        Subject[i]<-gsub("^Subject+\\s", "", Subject[i])
+    }
+    Subject<-sapply(Subject, as.integer)
     allData<-cbind(Subject,allData)
     allData<-as.data.frame(allData, stringsAsFactors = FALSE)
     allData[,3:length(allData)]<-as.numeric(unlist(allData[,3:length(allData)]))
     totalScores<-rowSums(allData[,3:length(allData)])
-    sums<-cbind(factor(as.integer(allData$Condition)), as.numeric(totalScores))
-    sums<-as.data.frame(sums)
-    colnames(sums)<-c("Condition", "FinalScore")
+    sums<-as.data.frame(totalScores)
+    colnames(sums)<-c("FinalScore")
+    allData<-cbind(allData,sums)
     allData.table<-tbl_df(allData)
     #here we take the mean of the scores across subjects by level for both conditions
     summary<-allData.table%>%
@@ -63,5 +67,6 @@ readAll<-function(numberSubjects){
     plot(levels[1,], col="red", main="Mean Score vs. Level", xlab="Level", ylab="Score", type='p', pch=19, ylim=c(20,160))
     points(levels[2,],col="blue",pch=19)
     legend("bottomleft", col = c("red","blue"), legend=c("Condition 1","Condition2"), bty = 1, pch = 19)
-    list(allData.table, sums)
+    allData<-cbind(allData.table, sums)
+    allData
 }

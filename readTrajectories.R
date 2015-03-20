@@ -59,10 +59,21 @@ readSubject<-function(subject){
     dirs_of_interest<-dirs[grepl("Level",dirs)]
     allLevels<-lapply(dirs_of_interest, list.files, full.names = TRUE)
     allLevels<-unlist(allLevels)
-    allTrajectories<-sapply(allLevels, readTrajectories)
-    remove(allLevels)
+    #we need to order by trial number! fancy reg exp should help!
+    properOrder<-gsub(".*Subject+\\s+\\d+\\d+/Level+\\s+\\d+/?", "", allLevels)
+    properOrder<-gsub(".txt", "", properOrder)
+    properOrder<-as.numeric(properOrder)
+    toSort<-data.frame(allLevels,properOrder)
+    sorted<-toSort[with(toSort, order(properOrder, allLevels)), ]
+    #read the sorted trajectories
+    allTrajectories<-sapply(sorted$allLevels, readTrajectories)
+    remove(sorted)
+    #add condition and subject columns
     c<-read.table(str_join(subject,"/condition.txt"))
     colnames(c)<-"Condition"
+    Subject<-gsub("^.*Subject+\\s", "", subject)
+    Subject<-as.integer(Subject)
+    #get the deviations for the trajectories
     medianDevs<-vector()
     for (i in 1:length(allTrajectories)){
         dev<-getDev(allTrajectories[[i]])
@@ -70,15 +81,25 @@ readSubject<-function(subject){
     }
     #this is the mean of the median of absolute deviations per trial, taken by level.  So, this will indicate if the absoulte devs
     #are becoming smaller as the levels increase
+    #split the data by levels w/ the 16 trials per level
     groupByLevel<-split(medianDevs,as.numeric(gl(length(medianDevs),16,length(medianDevs)))) 
     meanOfDevsByLevel<-sapply(groupByLevel, mean)
     remove(allTrajectories)
-    meanOfDevsByLevel<-cbind(meanOfDevsByLevel, c)
-    meanOfDevsByLevel
+    levels<-1:12
+    for(i in levels){
+        levels[i] = str_join("MADLevel",i)
+    }
+    meanMADs<-data.frame()
+    meanMADs<-rbind(meanMADs, meanOfDevsByLevel)
+    colnames(meanMADs)<-levels
+    meanMADs<-cbind(Subject, c, meanMADs)
+    meanMADs
 }
 
 readEverything<-function(){
     #this does all the work, will take a while to run depending on the number of subject folders
+    library(ggplot2)
+    library(dplyr)
     png("deviationsPlot.png", width = 860, height = 548)
     dirs<-list.dirs(recursive = FALSE)
     dirs_of_interest<-dirs[grepl("Subject", dirs)]
@@ -87,22 +108,41 @@ readEverything<-function(){
         subjData<-readSubject(subj)
         allSubjectMeans[[subj]]<-subjData
     }
-    print(allSubjectMeans)
-    cond1Means<-NULL
-    cond2Means<-NULL
-    for (subject in allSubjectMeans){
-        if (subject$Condition==1){
-            cond1Means<-rbind(cond1Means,subject$meanOfDevsByLevel)
-        }
-        else if (subject$Condition==2){
-            cond2Means<-rbind(cond2Means,subject$meanOfDevsByLevel)
-        }
-    }
-    cond1<-apply(cond1Means, 2, mean)
-    cond2<-apply(cond2Means, 2, mean)
-    plot(1:length(cond1), cond1, pch=19, col="red", xlab = "Level", ylab="Mean of Median Abs. Deviations (pixels)", main = "Mean of Median Absolute Deviations from Enemies by Level", ylim = c(0,400))
-    points(1:length(cond2), cond2, pch=19, col="blue")
-    legend("bottomright", c("Condition 1", "Condition2"), pch=19, col= c('red', 'blue'))
+    allSubjectMeans<<-allSubjectMeans
+    #get a dataframe with all Subjects
+    trajectData<-do.call("rbind", allSubjectMeans)
+    trajectData.tbl<-tbl_df(trajectData)
+    summaryByLevel<-trajectData.tbl%>%
+        group_by(Condition)%>%
+        summarise_each(funs(mean), -Subject)
+    summaryBySubject<-trajectData.tbl%>%
+        group_by(Condition, Subject)%>%
+        summarize(meanMAD = mean(MADLevel1:MADLevel12))
+    summaryNoGrouping<-trajectData.tbl%>%
+        select(-Subject, -Condition)%>%
+        summarise_each(funs(mean))
+    #the following lets us make a histogram to compare the distro of 2 conditions
+    qplot(summaryBySubject$meanMAD, fill = factor(summaryBySubject$Condition), xlab = "Mean MAD (px)")
+    ggsave(filename= "MADs_hist.png")
+    #construct 3 linear models, 1 for the no-grouping data, and 2 for each condition.
+    levelSeries<-as.vector(1:12)
+    modelBoth<-lm(unlist(summaryNoGrouping) ~ levelSeries)
+    modelCond1<-lm(unlist(summaryByLevel[1, 2:13])~levelSeries)
+    modelCond2<-lm(unlist(summaryByLevel[2,2:13])~levelSeries)
+    a<-predict(modelCond1, interval = "confidence")
+    b<-predict(modelCond2, interval = "confidence")
+    #qplot(cond1Means[,1], main = "Mean of MADs by Level Condition 1")
+    #ggsave(filename = "Cond1Hist.png")
+    #qplot(cond2Means[,1], main = "Mean of MADs by Level Condition2")
+    #ggsave(filename = "Cond2Hist.png")
+    png("deviationsPlot.png", width = 860, height = 548)
+    plot(1:12, unlist(summaryByLevel[1,2:13]), pch=19, col="red", xlab = "Level", ylab="Mean of Median Abs. Deviations (pixels)", main = "Mean of Median Absolute Deviations from Enemies by Level", ylim = c(100,250))
+    points(1:12, unlist(summaryByLevel[2,2:13]), pch=19, col="blue")
+    legend("bottomleft", c("Condition 1", "Condition2"), pch=19, col= c('red', 'blue'))
+    lines(a[,2],lty=2)
+    lines(a[,3], lty = 2)
+    lines(b[,2], lty = 2)
+    lines(b[,3], lty = 2)
     dev.off();
-    list(cond1,cond2)
+    list(trajectData,modelCond1,modelCond2,modelBoth)
 }
