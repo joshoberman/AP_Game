@@ -52,7 +52,7 @@ def checkCond(CONDITION):
 
 CONDITION = checkCond(CONDITION)
 print CONDITION"""
-CONDITION = 1
+CONDITION = random.randrange(1,3)
 print CONDITION
 
 # --- Classes ---
