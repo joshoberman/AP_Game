@@ -81,8 +81,8 @@ class Enemy(pygame.sprite.Sprite):
     e_10cents = ["Notes/E-10cent/{0}".format(i) for i in e_10cents if not i.startswith('.')]"""
     enemies = listdir("Images/Enemies")
     enemies = ["Images/Enemies/{0}".format(i) for i in enemies if not i.startswith('.')]
-    x_speed = 6
-    y_speed = 6
+    x_speed = 1
+    y_speed = 1
     #prob = 0.6
     offscreen_min = 6 #min of generation of enemy/sound stimulus onset offscreen in seconds
     offscreen_max = 6 #max of generation of enemy/sound stimulus onset offscreen in seconds
@@ -312,7 +312,7 @@ class Bullet(pygame.sprite.Sprite):
 
 class Level(object):
     #this is used to define levels and the ammo and speed attributes as they increase
-    currentLevel = 7
+    currentLevel = 1
     level_success = None
     ammo = None
     def __init__(self):
@@ -391,7 +391,7 @@ class Game(object):
     enemy_live = False #bool to tell us if there is a live enemy
     elapsedTime = 0.0 #keep track of elapsed time via frame rate changes
     enemySpawnTime= 180.0 # of frames between enemy death and next enemy spawn
-    stick_sensitivity = 4.2 #sensitivity of joystick for player motion, represents max number of
+    stick_sensitivity = 4 #sensitivity of joystick for player motion, represents max number of
     #pixels per frame the player moves when stick is moved all the way to left or right
     trajectory = []
     trial = 0
