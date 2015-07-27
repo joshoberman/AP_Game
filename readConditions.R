@@ -40,7 +40,7 @@ readAll<-function(numberSubjects){
         subjects[i] = str_join("Subject ", i)
     }
     # here is where u can exclude certain subjects from the analysis
-    subjects<-subjects[!((subjects=="Subject 1") | (subjects=="Subject 2") | (subjects == "Subject 23"))]
+    subjects<-subjects[!((subjects=="Subject 1") | (subjects=="Subject 2") | (subjects=="Subject 13") | (subjects == "Subject 23"))]
     allData<-NULL
     i=1
     for (i in 1:length(subjects)){

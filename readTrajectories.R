@@ -70,7 +70,7 @@ readSubject<-function(subject){
     allTrajectories<-sapply(sorted$allLevels, readTrajectories)
     remove(sorted)
     #add condition and subject columns
-    c<-read.table(str_join(subject,"/condition.txt"))
+    c<-read.table(str_c(subject,"/condition.txt"))
     colnames(c)<-"Condition"
     Subject<-gsub("^.*Subject+\\s", "", subject)
     Subject<-as.integer(Subject)
@@ -86,8 +86,8 @@ readSubject<-function(subject){
     meanOfDevsByLevel<-sapply(groupByLevel, mean)
     remove(allTrajectories)
     levels<-1:12
-    for(i in levels){
-        levels[i] = str_join("MADLevel",i)
+    for(i in 1:length(levels)){
+        levels[i] = str_c("MADLevel",levels[i])
     }
     meanMADs<-data.frame()
     meanMADs<-rbind(meanMADs, meanOfDevsByLevel)
@@ -96,7 +96,7 @@ readSubject<-function(subject){
     meanMADs
 }
 
-readEverything<-function(){
+readAllTrajectories<-function(){
     #this does all the work, will take a while to run depending on the number of subject folders
     library(ggplot2)
     library(dplyr)
@@ -105,7 +105,7 @@ readEverything<-function(){
     library(iterators)
     nCores<-4
     registerDoParallel(nCores)
-    png("deviationsPlot.png", width = 860, height = 548)
+    #png("deviationsPlot.png", width = 860, height = 548)
     dirs<-list.dirs(recursive = FALSE)
     dirs_of_interest<-dirs[grepl("Subject", dirs)]
     allSubjectMeans<-list()
@@ -113,9 +113,9 @@ readEverything<-function(){
         subjData<-readSubject(subj)
         allSubjectMeans[[subj]]<-subjData
     }
-    allSubjectMeans<<-allSubjectMeans
     #get a dataframe with all Subjects
     trajectData<-do.call("rbind", allSubjectMeans)
+    trajectData<-subset(trajectData, !Subject==13)
     trajectData.tbl<-tbl_df(trajectData)
     summaryByLevel<-trajectData.tbl%>%
         group_by(Condition)%>%
@@ -137,14 +137,14 @@ readEverything<-function(){
     modelCond2<-lm(unlist(summaryByLevel[2,2:13])~levelSeries)
     #modelBoth<-lm(unlist(summaryBySubject[,3]) ~ levelSeries + summaryBySubject$Condition)
     #get the confidence interval lines
-    a<-predict(modelCond1, interval = "confidence")
-    b<-predict(modelCond2, interval = "confidence")
+    a<-predict(modelCond1, interval = "prediction")
+    b<-predict(modelCond2, interval = "prediction")
     #qplot(cond1Means[,1], main = "Mean of MADs by Level Condition 1")
     #ggsave(filename = "Cond1Hist.png")
     #qplot(cond2Means[,1], main = "Mean of MADs by Level Condition2")
     #ggsave(filename = "Cond2Hist.png")
-    png("deviationsPlot.png", width = 860, height = 548)
-    plot(1:12, unlist(summaryByLevel[1,2:13]), pch=19, col="red", xlab = "Level", ylab="Mean of Median Abs. Deviations (pixels)", main = "Mean of Median Absolute Deviations from Enemies by Level", ylim = c(100,250))
+    png("deviationsPlotPrediction.png", width = 860, height = 548)
+    plot(1:12, unlist(summaryByLevel[1,2:13]), pch=19, col="red", xlab = "Level", ylab="Mean of Median Abs. Deviations (pixels)", main = "Mean of Median Absolute Deviations from Enemies by Level", ylim = c(100,300))
     points(1:12, unlist(summaryByLevel[2,2:13]), pch=19, col="blue")
     legend("bottomleft", c("Condition 1", "Condition2"), pch=19, col= c('red', 'blue'))
     abline(modelCond1)
